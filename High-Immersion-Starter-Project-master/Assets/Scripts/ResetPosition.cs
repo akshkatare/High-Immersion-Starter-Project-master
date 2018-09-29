@@ -8,7 +8,8 @@ public class ResetPosition : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         originalPosition = this.transform.position;
-	}
+        this.GetComponent<Rigidbody>().isKinematic = true;
+    }
 
     private void OnCollisionEnter(Collision collision)
     {

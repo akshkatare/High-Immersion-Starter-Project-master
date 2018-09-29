@@ -17,6 +17,7 @@ public class ControllerInputManager : MonoBehaviour {
     private SteamVR_TrackedObject trackedObj;
     #endregion
 
+   
     #region Teleport
 
     private LineRenderer laser;
@@ -24,6 +25,9 @@ public class ControllerInputManager : MonoBehaviour {
     public Vector3 TargetLocation;
     public GameObject Player;
     public LayerMask layer;
+
+    public Material laserValidColor;
+    public Material LaserInvalidColor;
 
     #endregion
 
@@ -35,76 +39,91 @@ public class ControllerInputManager : MonoBehaviour {
     {
         trackedObj = GetComponent<SteamVR_TrackedObject>();
 
-        if (isLeft)
+       if (isLeft)
             laser = GetComponentInChildren<LineRenderer>();
+           
     }
 
     // Update is called once per frame
     void Update () {
 
-        #region  CodeForTeleport(LeftHandOnly)
-        if (isLeft)
-        {
-            if (controller.GetPress(touchPad))
-            {
-                laser.gameObject.SetActive(true);
-                Aim.SetActive(true);
-                laser.SetPosition(0, gameObject.transform.position);
+          #region  CodeForTeleport(LeftHandOnly)
+         if (isLeft)
+         {
+             if (controller.GetPress(touchPad))
+             {
+                 laser.gameObject.SetActive(true);
+                 Aim.SetActive(true);
+                 laser.SetPosition(0, gameObject.transform.position);
 
-                RaycastHit hit;
-                if (Physics.Raycast(transform.position, transform.forward, out hit, 15, layer))
-                {
-                    TargetLocation = hit.point;
-                    laser.SetPosition(1, TargetLocation);
-                    Aim.transform.position = TargetLocation;
-                }
-                else
-                {
-                    TargetLocation = transform.position + 15 * transform.forward;
-                    RaycastHit groundRay;
-                    if (Physics.Raycast(TargetLocation, -Vector3.up, out groundRay, 17, layer))
+                 RaycastHit hit;
+                 if (Physics.Raycast(transform.position, transform.forward, out hit, 15, layer))
+                 {
+
+                    if (hit.transform.gameObject.layer == 9)
                     {
-                        TargetLocation.y = groundRay.point.y;
+                        TargetLocation = hit.point;
+                        laser.SetPosition(1, TargetLocation);
+                        Aim.transform.position = TargetLocation;
+                        laser.material = laserValidColor;
+                    }
+                    if (hit.transform.gameObject.layer == 10)
+                    {
+                        laser.material = LaserInvalidColor;
+                        laser.SetPosition(1, hit.point);
+                        TargetLocation = new Vector3(transform.position.x, 0f, transform.position.z);
+                        Aim.transform.position =new Vector3(transform.position.x,0f,transform.position.z);
                     }
 
-                    laser.SetPosition(1, transform.forward * 15 + transform.position);
-                    Aim.transform.position = TargetLocation;
                 }
-            }
-            if (controller.GetPressUp(touchPad))
-            {
-                laser.gameObject.SetActive(false);
-                Aim.SetActive(false);
-                Player.transform.position = TargetLocation;
-            }
-        }
-        #endregion
-        
+                 else
+                 {
+
+                     TargetLocation = transform.position + 15 * transform.forward;
+                     RaycastHit groundRay;
+                     if (Physics.Raycast(TargetLocation, -Vector3.up, out groundRay, 17, layer))
+                     {
+                         TargetLocation.y = groundRay.point.y;
+                     }
+
+                     laser.SetPosition(1, TargetLocation);
+                     Aim.transform.position = TargetLocation;
+                 }
+             }
+             if (controller.GetPressUp(touchPad))
+             {
+                 laser.gameObject.SetActive(false);
+                 Aim.SetActive(false);
+                 Player.transform.position = TargetLocation;
+             }
+         }
+         #endregion
+     
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.tag == "Throwable")
+        if (other.tag == "Ball")
         {
-            if(controller.GetPressDown(triggerButton))
+            if(controller.GetPressUp(triggerButton))
             {
-                ReleaseObject(other.gameObject);
+                ReleaseObjectBall(other.gameObject);
             }
-            if (controller.GetPressUp(triggerButton))
+            if (controller.GetPress(triggerButton))
             {
-                GrabObject(other.gameObject);
+                GrabObjectBall(other.gameObject);
             }
         }
     }
 
-    void ReleaseObject(GameObject obj)
+    void ReleaseObjectBall(GameObject obj)
     {
         obj.transform.SetParent(null);
         obj.GetComponent<Rigidbody>().isKinematic = false;
         obj.GetComponent<Rigidbody>().velocity = controller.velocity * 2f;
         obj.GetComponent<Rigidbody>().angularVelocity = controller.angularVelocity;
     }
-    void GrabObject(GameObject obj)
+    void GrabObjectBall(GameObject obj)
     {
         obj.transform.SetParent(gameObject.transform);
         obj.GetComponent<Rigidbody>().isKinematic = true;
