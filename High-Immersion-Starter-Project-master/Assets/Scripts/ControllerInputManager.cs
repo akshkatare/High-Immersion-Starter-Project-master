@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,6 +32,18 @@ public class ControllerInputManager : MonoBehaviour {
 
     #endregion
 
+
+    #region ObjectSelector
+
+    public float swipeSum;
+    public float touchLast;
+    public float touchCurrent;
+    public float distance;
+    public bool hasSwipedLeft;
+    public bool hasSwipedRight;
+
+    #endregion
+
     #region Variables
     public bool isLeft;
     #endregion
@@ -38,6 +51,10 @@ public class ControllerInputManager : MonoBehaviour {
     void Start()
     {
         trackedObj = GetComponent<SteamVR_TrackedObject>();
+        if (controller.GetTouchDown(touchPad))
+        {
+            touchLast = controller.GetAxis(touchPad).x;
+        }
 
        if (isLeft)
             laser = GetComponentInChildren<LineRenderer>();
@@ -97,9 +114,80 @@ public class ControllerInputManager : MonoBehaviour {
                  Player.transform.position = TargetLocation;
              }
          }
-         #endregion
-     
+        #endregion
+
+
+        #region CodeForObjectSpawnerMenu(RightHandOnly)
+        if (!isLeft)
+        {
+
+            if (controller.GetTouch(touchPad))
+            {
+              ///  Debug.Log("RightTouch");
+                if (controller.GetPressDown(triggerButton))
+                {
+                    ObjectMenuManager.instance.SpawnCurrentObject();
+                }
+                touchCurrent = controller.GetAxis(touchPad).x;
+                distance = touchCurrent - touchLast;
+                touchLast = touchCurrent;
+                swipeSum += distance;
+                
+                if (!hasSwipedRight)
+                {
+                    if (swipeSum > 0.5f)
+                    {
+                        swipeSum = 0;
+                        SwipeRight();
+                        hasSwipedRight = true;
+                        hasSwipedLeft = false;
+                    }
+                }
+                if (!hasSwipedLeft)
+                {
+                    if (swipeSum < -0.5f)
+                    {
+                        swipeSum = 0;
+                        SwipeLeft();
+                        hasSwipedRight = false;
+                        hasSwipedLeft = true;
+                    }
+                }
+            }
+
+            if (controller.GetTouchUp(touchPad))
+            {
+                ObjectMenuManager.instance.Disable();
+                swipeSum = 0;
+                touchCurrent = 0;
+                touchLast = 0;
+                hasSwipedLeft = false;
+                hasSwipedRight = false;
+            }
+        }
+        #endregion
+
+
+        if (controller.GetPressDown(gripButton))
+        {
+            SceneHandler.instance.LoadThisLevel();
+        }
     }
+
+    private void SwipeLeft()
+    {
+        ObjectMenuManager.instance.MenuLeft();
+        Debug.Log("Swiped Left");
+    }
+
+    private void SwipeRight()
+    {
+        ObjectMenuManager.instance.MenuRight();
+        Debug.Log("Swiped Right");
+    }
+
+
+
 
     private void OnTriggerStay(Collider other)
     {
@@ -114,10 +202,23 @@ public class ControllerInputManager : MonoBehaviour {
                 GrabObjectBall(other.gameObject);
             }
         }
+
+        if (other.tag == "Rube objects")
+        {
+            if (controller.GetPressUp(triggerButton))
+            {
+                ReleaseObjectRube(other.gameObject);
+            }
+            if (controller.GetPress(triggerButton))
+            {
+                GrabObjectRube(other.gameObject);
+            }
+        }
     }
 
     void ReleaseObjectBall(GameObject obj)
     {
+        AntiCheat.instance.Cheatchecker();
         obj.transform.SetParent(null);
         obj.GetComponent<Rigidbody>().isKinematic = false;
         obj.GetComponent<Rigidbody>().velocity = controller.velocity * 2f;
@@ -127,6 +228,16 @@ public class ControllerInputManager : MonoBehaviour {
     {
         obj.transform.SetParent(gameObject.transform);
         obj.GetComponent<Rigidbody>().isKinematic = true;
+        controller.TriggerHapticPulse(2000);
+    }
+
+    void ReleaseObjectRube(GameObject obj)
+    {
+        obj.transform.SetParent(null);
+    }
+    void GrabObjectRube(GameObject obj)
+    {
+        obj.transform.SetParent(gameObject.transform);
         controller.TriggerHapticPulse(2000);
     }
 
