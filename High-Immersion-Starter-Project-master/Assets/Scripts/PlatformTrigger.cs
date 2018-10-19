@@ -5,15 +5,16 @@ using UnityEngine;
 public class PlatformTrigger : MonoBehaviour {
 
 
-    private void OnTriggerStay(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        Debug.Log(other.gameObject.layer+" Enter");
+     //  Debug.Log(other.gameObject.layer+" Enter");
+		if(other.gameObject.layer==11)
         AntiCheat.instance.isPlayerIn = true;
     }
     private void OnTriggerExit(Collider other)
     {
-        Debug.Log(other.gameObject.layer+" Exit");
-
+       //Debug.Log(other.gameObject.layer+" Exit");
+		if(other.gameObject.layer==11)
         AntiCheat.instance.isPlayerIn = false;
     }
 

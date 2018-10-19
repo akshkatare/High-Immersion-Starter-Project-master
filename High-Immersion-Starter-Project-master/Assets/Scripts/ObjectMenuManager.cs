@@ -57,7 +57,7 @@ public class ObjectMenuManager : MonoBehaviour {
 
     public void SetText(GameObject ToSet,int num)
     {
-        Debug.Log(ToSet.transform.GetChild(0).GetChild(0));
+       // Debug.Log(ToSet.transform.GetChild(0).GetChild(0));
         ToSet.transform.GetChild(0).GetChild(1).GetComponent<UnityEngine.UI.Text>().text = ObjectsLeft[num] + "/" + ObjectCount[num];
         
     }
